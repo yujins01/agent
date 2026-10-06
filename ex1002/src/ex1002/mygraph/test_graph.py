@@ -16,6 +16,7 @@ graph = graph.compile() #출력은 compile 뒤에 해야함
 graph.invoke({"messages": [{"role": "user", "content": "hi!"}]})
 
 #실행
+#사용자가 hi 매새지를 날림 -> 또 다른 ai가 hello world 답을 날림
 result = graph.invoke({"messages": [{"role": "user", "content": "hi!"}]})
 
 #결과
