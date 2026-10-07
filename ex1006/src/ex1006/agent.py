@@ -110,6 +110,25 @@ graph_builder.add_edge(START, "chatbot")
 graph = graph_builder.compile()
 
 
+####최신 정보 검색하고 답변 받기
+
+#1.invoke 사용
+#그래프를 시각화하여 저장하고 실행
+if __name__ == "__main__":
+    try:
+        image = graph.get_graph().draw_mermaid_png()
+        with open("web_agent/graph.png", "wb") as f:
+            f.write(image)
+    except Exception:
+        pass
+
+    respose = graph.invoke(
+        {
+            "messages":["Langgraph가 무엇인가요?"]
+        }
+    )
+print(respose)
+    
 def invoke():
     response = graph.invoke(
         {

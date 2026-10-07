@@ -1,7 +1,7 @@
 {
-  "dependencies": ["."],
+  "dependencies": [".web_agent"],
   "graphs": {
-    "agent": "./src/ex1006/langgraph_dev.py:graph"
+    "agent": "./web_agent/agent.py:graph"
   },
   "env": ".env"
 }

@@ -136,6 +136,10 @@ graph = graph_builder.compile()
 
 #     print(response)
 
+#####최신정보 검색하고 답변 받아보기
+
+#1. invoke 사용
+#그래프를 시각화하여 저장하고 실행
 if __name__ == "__main__":
 
     try:
@@ -158,7 +162,6 @@ if __name__ == "__main__":
     #print(response)
 
 #pretty_print() 사용해 메시지 목록 출력
-
 def invoke():
     response = graph.invoke(
         {
@@ -172,8 +175,7 @@ if __name__ == "__main__":
     invoke()
 
 
-#ainvoke 사용
-
+#2. ainvoke 사용
 async def ainvoke():
     response = await graph.ainvoke(
         {
@@ -187,3 +189,81 @@ async def ainvoke():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(ainvoke())
+
+#3. stream: udates 모드 사용하기
+#각 노드의 상태 업데이트만 출력되는 방식
+def stream():
+    response = graph.stream(
+        {
+            "messages":["Langgraph가 무엇인가요?"]
+        }
+    )
+    for chunk in response:
+        for node, state in chunk.items():
+            print("---", node, "---")
+            print(state)
+            print("="*60)
+
+if __name__ == "__main__":
+    stream()
+
+
+#4. stream: values 모드 사용하기
+#노드의 이름은 출력되지않고 상태 정보만 출력
+#그래프의 메시지 목록이 어떻게 쌓여가는지 파악 가능
+def stream_values():
+    response = graph.stream(
+        {
+            "messages":["Langgraph가 무엇인가요?"]
+        },
+        stream_mode="values"
+    )
+
+    for chunk in response:
+        for state_key, state_value in chunk.items():
+            print("---현재상태---")
+            for msg in state_value:
+                print(f"{type(msg).__name__}: {msg.content[:50]}")
+            if state_key == "messages":
+                state_value[-1].pretty_print()
+            print("="*60)
+
+if __name__ == "__name__":
+    stream_values()
+
+#5. stream: messages 모드 사용
+#토큰 단위로 순차적으로 실시간으로 생성되는 즉시 화면에 전달
+
+def stream_messages():
+    response = graph.stream(
+        {
+            "messages":["Langgraph가 무엇인가요?"]
+        },
+        stream_mode="values"
+    )
+
+    for token, metadata in response:
+        print(token.content)
+        #print(metadata["langgraph_node"])
+
+
+if __name__ == "__main__":
+    stream_messages()
+
+
+#6.astream()을 활용해 실행 결과 확인
+async def astream():
+    response = graph.astream(
+        {
+            "messages":["Langgraph가 무엇인가요?"]
+        }
+    )
+    async for chunk in response:
+        for node, state in chunk.items():
+            print('---',node,'---')
+            print(state)
+            print("="*60)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(astream())
