@@ -20,4 +20,3 @@ builder.add_edge("greeting", END)
 graph = builder.compile()
 
 # 실행: uv run langgraph dev
-# 오류예상: .env파일에 한글주석이 있는경우 - cp949오류 발생됨.

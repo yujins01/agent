@@ -267,3 +267,7 @@ async def astream():
 if __name__ == "__main__":
     import asyncio
     asyncio.run(astream())
+
+
+####langgrapgh dev할때 set PYTHONUTF8=1먼저 실행 후 동작
+####LangGraph API가 파일을 읽을 때 CP949 대신 UTF-8 방식으로 처리하도록 유도
