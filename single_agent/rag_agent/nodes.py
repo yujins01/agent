@@ -1,3 +1,7 @@
+### node는 작업을 수행하는
+#  4. 각 작업의 처리 로직 정의
+
+##### (1) 사용자의 입력을 받는 챗봇 노드
 #검색 도구 호출하는 LLM
 from dotenv import load_dotenv
 
@@ -20,43 +24,51 @@ def chatbot(state: AgentState):
     질문이 주어지면 검색 도구를 도구호출 하거나 일반 답변하며 종료할지 결정할 수 있습니다.
     """
     print("----- [CHATBOT] -----")
-    messages = state["messages"]
-    llm_with_tools = llm.bind_tools([retriever_tool]) # [ 1 ]
-    response = llm_with_tools.invoke(messages) # [ 2 ]
+    messages = state["messages"] #메시지 목록을 가져옴
+    llm_with_tools = llm.bind_tools([retriever_tool]) #retriever를 실행할 도구를 불러와 LLM에 바인딩
+    response = llm_with_tools.invoke(messages) # 
 
-    return { # [ 3 ]
+    return { 
         "messages": [response],
         "question" : messages[-1].content
     }
 
-#관련 문서를 검색하는 노드
-def retrieve(state: AgentState):
+
+##### (2) 문서 검색 수행 노드 생성
+# 관련 문서를 검색하는 노드
+
+def retrieve(state: AgentState): #현재 에이전트의 상태를 입력 받음
     """
     현재 질문을 기반으로 관련 문서를 검색합니다.
     """
     print("----- [RETRIEVER] -----")
     question = state["question"]
-    relevant_doc = retriever.invoke(question) # [ 1 ]
+    #question에 저장된 사용자의 질문을 받아와 벡터 검색기에 인보크
+    #그 결과 사용자의 질문과 가장 관련있는 문서들이 변수에 저장
+    relevant_doc = retriever.invoke(question) 
     context = ""
-    for doc in relevant_doc: # [ 2 ]
+    #context에 문서 내용 저장
+    for doc in relevant_doc: 
         context += f"Page {doc.metadata['page']+1}: {doc.page_content}\n"
 
 
     # Tool 호출에 대한 응답 메시지(검색 결과) 생성
     last_message = state["messages"][-1]
 
+    #도구호출이 있는지 확인
     if hasattr(last_message, 'tool_calls') and len(last_message.tool_calls) > 0:
         tool_call_id = last_message.tool_calls[0]['id']
-        tool_message = ToolMessage( # [ 3 ]
-            content=context,
-            name="retriever",
+        tool_message = ToolMessage( 
+            content=context,   # 반환한 관련 문서 텍스트를 담은 context를  content로 도구 메시지 생성
+            name="retriever",  
             tool_call_id=tool_call_id
         )
         return {"messages": [tool_message], "context": context} # [ 4 ]
     else:
         return {"messages": [context], "context": context}
 
-#검색 결과를 정리하는 노드
+##### (3) 검색 결과를 정리하는 노드
+# 검색된 문서를 LLM이 참고하기 좋은 형태로 정리
 def context_organizer(state: AgentState):
     """
     검색된 결과를 정리합니다.
@@ -86,7 +98,7 @@ def context_organizer(state: AgentState):
 
     return {"context": organized_context.content, "messages": [AIMessage(organized_context.content)]}
 
-#쿼리를 다시 작성하는 노드
+##### (5) 쿼리를 다시 작성하는 노드
 def transform_query(state: AgentState):
     """
     더 나은 질문을 생성하기 위해 쿼리를 변환합니다.
@@ -123,16 +135,17 @@ def transform_query(state: AgentState):
         "retry_num": state["retry_num"] + 1 if state.get("retry_num") else 1
     }
 
-#최종 답변 노드 구현
+##### (6) 최종 답변 노드 구현
+# 검색된 문서를 기반으로 답변을 생성하는 노드 만들기
 def generate(state: AgentState):
     """
     검색된 문서와 질문을 기반으로 답변을 생성합니다.
     """
     print("-----[GENERATE]-----")
-    question = state["question"]
-    context = state["context"]
+    question = state["question"] #사용자가 입력한 질문
+    context = state["context"]   #검색 후 정리된 문서 내용
 
-    retry_num = state.get("retry_num", 0)
+    retry_num = state.get("retry_num", 0) #재시도 횟수, 값이 없으면 기본 값 0
 
     if retry_num >= 3:
          rag_prompt = ChatPromptTemplate.from_messages(
@@ -150,7 +163,7 @@ def generate(state: AgentState):
                 ),
             ]
         )
-    else: # [ 2 ]
+    else: 
         rag_prompt = ChatPromptTemplate.from_messages(
             [
                 (
